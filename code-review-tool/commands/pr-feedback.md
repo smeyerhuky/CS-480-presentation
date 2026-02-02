@@ -1,0 +1,413 @@
+---
+model: sonnet
+allowed-tools: Task, Bash(gh pr view:*), Bash(gh pr diff:*), Bash(gh pr list:*), Bash(gh pr comment:*), Bash(git diff:*), Bash(git branch:*), Read, Glob, Grep
+argument-hint: [pr-number] [--post-comment]
+description: Review a pull request with GitHub integration and optional comment posting
+---
+
+# PR Feedback - Pull Request Review
+
+Provide comprehensive pull request review with GitHub integration. Auto-detect current branch's PR or review a specific PR number. Optionally post the review as a PR comment.
+
+## PR Target Detection
+
+Determine which PR to review based on `$ARGUMENTS`:
+
+1. **PR number provided** (e.g., `123`, `#456`):
+   - Use `gh pr view $PR_NUMBER` directly
+   - Review that specific PR
+
+2. **No arguments** (empty `$ARGUMENTS`):
+   - Detect current branch's PR
+   - Use `gh pr view` (without number) to get current branch's PR
+   - If no PR found, inform user
+
+3. **--post-comment flag present**:
+   - After generating review, post it as a PR comment
+   - Use `gh pr comment $PR_NUMBER --body "[review]"`
+   - Requires PR number (either provided or detected)
+
+## Step 1: Fetch PR Details
+
+Fetch the PR information using GitHub CLI:
+
+**For specific PR number:**
+```bash
+gh pr view $PR_NUMBER --json number,title,body,state,isDraft,author,headRefName,baseRefName,url
+```
+
+**For current branch:**
+```bash
+gh pr view --json number,title,body,state,isDraft,author,headRefName,baseRefName,url
+```
+
+**Get PR diff:**
+```bash
+gh pr diff $PR_NUMBER
+# or
+gh pr diff
+```
+
+## Step 2: Pre-Review Checks
+
+Before starting the review, validate the PR state:
+
+### Check PR Status
+
+```bash
+gh pr view $PR_NUMBER --json state,isDraft,mergeable
+```
+
+**Skip review if:**
+- PR is already `MERGED` or `CLOSED`
+  - Message: "This PR has already been [merged/closed]. No review needed!"
+- Note if PR is marked as `DRAFT`:
+  - Include in review: "Note: This is a draft PR"
+
+**Automated PR Detection:**
+- Check if PR title/body contains common automation indicators:
+  - "Dependabot", "renovate", "bump", "Update dependencies"
+  - If detected, note: "This appears to be an automated dependency update"
+  - Adjust review focus accordingly
+
+## Step 3: Extract PR Context
+
+From the PR information, extract:
+
+1. **PR Metadata:**
+   - Number and title
+   - Author
+   - Branch names (head → base)
+   - Draft status
+   - URL for reference
+
+2. **PR Description:**
+   - Full body text
+   - Look for:
+     - Linked issues ("Fixes #123", "Closes #456")
+     - Testing instructions
+     - Known limitations or TODOs
+     - Breaking changes
+
+3. **Changed Files:**
+   - List of files modified
+   - Size of changes (lines added/removed)
+   - Identify change patterns
+
+## Step 4: Invoke Review Coordinator
+
+Invoke the review-coordinator with full PR context:
+
+```markdown
+Use Task tool with subagent_type="review-coordinator"
+
+Prompt: "Perform a comprehensive pull request review with focus on practical, actionable feedback.
+
+**PR Context:**
+- PR #$PR_NUMBER: [title]
+- Author: [author]
+- Branch: [headRefName] → [baseRefName]
+- Status: [draft/ready]
+- URL: [url]
+
+**PR Description:**
+[Include full PR body - this provides intent and context]
+
+**Linked Issues:**
+[List any referenced issues]
+
+**Code Changes:**
+[Include the full git diff from gh pr diff]
+
+**Changed Files:**
+[List files modified]
+
+Coordinate with specialized review agents (Code Clarity Guardian and Edge Case Sentinel) to provide comprehensive feedback. Synthesize findings into the standard 4-section format with PR-specific considerations:
+
+1. Quick Assessment - Include readiness for merge given the PR context
+2. Testing - Reference any testing instructions from PR description
+3. Concerns - Consider the PR's stated goals and context
+4. Suggestions - Include follow-up work that could be separate PRs
+
+Use a friendly, colleague-like tone. Be specific with file:line references. Make all feedback actionable."
+```
+
+## Step 5: Format Review Output
+
+### Standard Format (Console Output)
+
+```markdown
+# PR Review: #$PR_NUMBER - [Title]
+
+**Author:** [author] | **Branch:** [head] → [base] | [**Draft**] | [URL]
+
+## Quick Assessment
+
+**Status**: [Merge-ready ✓ | Has blockers ⚠️] [| Draft 📝]
+
+[2-3 sentence friendly summary considering PR description and goals]
+
+## Testing
+
+**What to test:**
+- [Specific scenarios based on PR changes]
+- [Include any testing instructions from PR description]
+
+**Commands to run:**
+```bash
+[Copy-pasteable test commands]
+```
+
+**Expected results:**
+- [Success criteria]
+
+## Concerns
+
+**Edge cases to verify:**
+- [Edge case] (file:line) - [Why] - [How to address]
+
+**Error handling gaps:**
+- [Gap] (file:line) - [Scenario] - [Recommendation]
+
+**Other concerns:**
+- [Concern] (file:line) - [Impact] - [Suggestion]
+
+## Suggestions
+
+**Code quality:**
+- [Improvement] - [Benefit] - [Priority]
+
+**Additional tests:**
+- [Test scenario] - [What it validates]
+
+**Follow-up work:**
+- [Enhancement for future PR] - [Why separate PR makes sense]
+
+---
+*Generated by dev-review plugin | [View PR](url)*
+```
+
+### GitHub Comment Format (--post-comment)
+
+If `--post-comment` flag is present, format for GitHub markdown:
+
+```markdown
+## Dev Review Results
+
+### ✅ Merge Status
+**[Merge-ready / Has blockers / Draft PR]**
+
+[Summary paragraph]
+
+### 🧪 Testing Checklist
+- [ ] [Test scenario 1]
+- [ ] [Test scenario 2]
+- [ ] [Test scenario 3]
+
+**Commands:**
+```bash
+[test commands]
+```
+
+### ⚠️ Concerns
+[If any concerns exist, list with file:line permalinks]
+- [Concern 1] ([file:line](permalink)) - [Description]
+- [Concern 2] ([file:line](permalink)) - [Description]
+
+[If no concerns:]
+No major concerns identified! The code looks solid.
+
+### 💡 Suggestions
+[Optional improvements]
+
+---
+🤖 *Generated by [dev-review plugin](https://github.com/yourusername/dev-review)*
+```
+
+**GitHub-Specific Enhancements:**
+- Convert file:line references to GitHub permalinks
+- Use emoji indicators (✅ ⚠️ 💡 🧪)
+- Format as checklists where appropriate
+- Include direct links to lines of code
+- Add footer attribution
+
+## Step 6: Post Comment (if requested)
+
+If `--post-comment` flag is present, post the formatted review:
+
+```bash
+gh pr comment $PR_NUMBER --body "$(cat <<'EOF'
+[GitHub-formatted review content]
+EOF
+)"
+```
+
+After posting, confirm:
+```markdown
+✅ Review posted to PR #$PR_NUMBER
+
+View at: [PR URL]
+```
+
+## Special Cases
+
+### No PR Found for Current Branch
+
+```markdown
+⚠️ No pull request found for the current branch.
+
+Options:
+1. Create a PR first: `gh pr create`
+2. Review a specific PR: `/pr-feedback <number>`
+3. Review uncommitted changes: `/review`
+
+Tip: Use `gh pr list` to see available PRs
+```
+
+### PR Already Merged
+
+```markdown
+✅ PR #$PR_NUMBER has already been merged!
+
+This review is for informational purposes only.
+
+[Include review anyway, but note it's post-merge]
+```
+
+### PR Is Draft
+
+Include prominent draft indicator in output:
+
+```markdown
+# PR Review: #$PR_NUMBER - [Title]
+
+📝 **Note:** This is a draft PR - review is preliminary
+
+[Continue with normal review]
+```
+
+Adjust tone:
+- More encouraging, less critical
+- Focus on big-picture issues
+- Note that details can be refined before marking ready
+
+### Automated Dependency PR
+
+If detected as automated (Dependabot, Renovate, etc.):
+
+```markdown
+# PR Review: #$PR_NUMBER - [Title]
+
+🤖 **Note:** This appears to be an automated dependency update
+
+## Quick Assessment
+
+**Status**: [Check for breaking changes]
+
+Automated dependency updates are generally safe, but let's verify:
+- Review CHANGELOG for breaking changes
+- Check if tests pass
+- Verify no unexpected API changes
+
+## Testing
+
+**Commands to run:**
+```bash
+[Standard test suite commands]
+```
+
+**Focus on:**
+- Ensuring tests pass
+- No unexpected behavior changes
+- Build succeeds
+
+## Concerns
+
+[Any issues found in the update]
+
+## Suggestions
+
+- Consider reviewing the dependency's CHANGELOG
+- Verify compatibility with project dependencies
+
+---
+*Automated PRs deserve quick but thorough review*
+```
+
+### GitHub CLI Not Available
+
+```markdown
+⚠️ GitHub CLI (gh) is not available or not authenticated.
+
+To use PR review features:
+1. Install GitHub CLI: https://cli.github.com/
+2. Authenticate: `gh auth login`
+
+Alternative: Provide PR number directly if PR is in GitHub web UI
+```
+
+### Post Comment Fails
+
+```markdown
+⚠️ Failed to post comment to PR #$PR_NUMBER
+
+Possible issues:
+- No write permission to repository
+- PR is locked or in protected state
+- GitHub API error
+
+Review generated successfully above - you can copy and post manually!
+```
+
+## Usage Examples
+
+### Example 1: Review Current Branch's PR
+```bash
+/pr-feedback
+```
+Auto-detects and reviews the PR for your current branch.
+
+### Example 2: Review Specific PR
+```bash
+/pr-feedback 123
+```
+Reviews pull request #123.
+
+### Example 3: Review and Post Comment
+```bash
+/pr-feedback 123 --post-comment
+```
+Reviews PR #123 and posts the review as a comment.
+
+### Example 4: Review Current Branch and Post
+```bash
+/pr-feedback --post-comment
+```
+Reviews current branch's PR and posts the comment.
+
+## Implementation Notes
+
+**PR Context Integration:**
+- PR description provides intent and context
+- Review should consider stated goals
+- Link concerns to specific PR objectives
+- Recognize related issues and tickets
+
+**GitHub Permalinks:**
+- Generate permalinks for file:line references
+- Format: `https://github.com/owner/repo/blob/[commit-sha]/[file]#L[line]`
+- Use PR's head commit SHA for stability
+
+**Comment Formatting:**
+- Use GitHub Flavored Markdown
+- Include emoji for visual scanning
+- Use checklists for actionable items
+- Format code blocks with language hints
+
+**Safety:**
+- Read-only operations by default
+- Only write (comment) with explicit `--post-comment` flag
+- No force actions or destructive operations
+- Always confirm before posting
+
+Execute PR review based on: $ARGUMENTS
