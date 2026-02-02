@@ -2,7 +2,7 @@
 marp: true
 theme: default
 paginate: true
-header: "AI for Engineers"
+header: "AI for Engineers (CS-480 @JMU Feb 2026)"
 footer: "Shuky Meyer | 2026"
 style: |
   section {
@@ -43,6 +43,7 @@ style: |
     gap: 1rem;
   }
   table { font-size: 24px; }
+  .table-sm table { font-size: 0.7em; }
   .grid-llm {
     display: grid;
     grid-template-columns: 1fr 1fr 1fr;
@@ -1428,6 +1429,36 @@ LLM answers with YOUR data
 2. **Coordinator** decides what to analyze, invokes specialists
 3. **Agents** with distinct personas ask different questions
 4. **Structured output** — consistent, actionable format every time
+
+---
+
+## Code Review Tool: Source Files
+
+Explore the full implementation on [GitHub](https://github.com/smeyerhuky/CS-480-presentation):
+
+```
+code-review-tool/
+├── commands/
+│   └── pr-feedback.md      # Entry point slash command
+│
+└── agents/
+    ├── review-coordinator.md    # Orchestrates the review process
+    ├── code-clarity-guardian.md # Readability & maintainability lens
+    └── edge-case-sentinel.md    # Defensive programming lens
+```
+
+<div class="table-sm">
+<center>
+
+| File | Description |
+|------|-------------|
+| [pr-feedback.md](https://github.com/smeyerhuky/CS-480-presentation/blob/main/code-review-tool/commands/pr-feedback.md) | Gathers PR context, invokes coordinator |
+| [review-coordinator.md](https://github.com/smeyerhuky/CS-480-presentation/blob/main/code-review-tool/agents/review-coordinator.md) | Decides what to analyze, synthesizes output |
+| [code-clarity-guardian.md](https://github.com/smeyerhuky/CS-480-presentation/blob/main/code-review-tool/agents/code-clarity-guardian.md) | Focuses on readability for future maintainers |
+| [edge-case-sentinel.md](https://github.com/smeyerhuky/CS-480-presentation/blob/main/code-review-tool/agents/edge-case-sentinel.md) | Identifies failure modes and error paths |
+
+</center>
+</div>
 
 ---
 
