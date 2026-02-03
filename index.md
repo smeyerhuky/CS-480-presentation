@@ -2,7 +2,7 @@
 marp: true
 theme: default
 paginate: true
-header: "AI for Engineers (CS-480 @JMU Feb 2026)"
+header: "AI for Engineers"
 footer: "Shuky Meyer | 2026"
 style: |
   section {
