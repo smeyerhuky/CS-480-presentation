@@ -1,7 +1,7 @@
 ---
 model: sonnet
 allowed-tools: "Task, Bash(gh pr view:*), Bash(gh pr diff:*), Bash(gh pr list:*), Bash(gh pr comment:*), Bash(git diff:*), Bash(git branch:*), Read, Glob, Grep"
-argument-hint: [pr-number] [--post-comment]
+argument-hint: "[pr-number] [--post-comment]"
 description: Review a pull request with GitHub integration and optional comment posting
 ---
 
