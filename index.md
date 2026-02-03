@@ -874,7 +874,8 @@ style: |
 # AI for Engineers
 ## From Statistics to Workflow
 
-    Shuky Meyer - Staff Software Engineer @ AuditBoard -> AI Developer Enablement
+    Shuky Meyer (Staff Software Engineer @ AuditBoard)
+      - AI Developer Enablement
 
 <div class="highlight-box">
 
@@ -1724,6 +1725,48 @@ async function updateProfile(userId: string, data: ProfileData) {
 - Line 14 throws: `Cannot set property 'email' of null`
 - **Impact:** 500 error, crashes the request
 - **Fix:** `if (!user) throw new NotFoundError('User not found')`
+</div>
+
+---
+
+<!-- _class: compact -->
+
+## Sample Output: The 4-Section Format
+
+<div class="md-code-light">
+
+```markdown
+## Quick Assessment
+
+**Status**: Has blockers ⚠️
+
+Good progress on the profile update feature! The flow is clear and the
+database operations are straightforward. However, there's a null reference
+issue that needs addressing before merge.
+
+## Testing
+
+**What to test:**
+- Profile update with valid existing user
+- Profile update with non-existent userId
+
+**Commands to run:**
+npm test src/__tests__/profile-service.test.ts
+
+## Concerns
+
+**Error handling gaps:**
+- Missing null check (profile-service.ts:14) - `findById()` returns null
+  for non-existent users, causing "Cannot set property of null" crash
+  - Add: `if (!user) throw new NotFoundError('User not found')`
+
+## Suggestions
+
+**Code quality:**
+- Consider extracting user lookup into a `getUserOrThrow()` helper
+  for reuse across services - Priority: Low
+```
+
 </div>
 
 ---
