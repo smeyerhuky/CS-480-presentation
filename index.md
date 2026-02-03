@@ -879,7 +879,7 @@ style: |
 
 <div class="highlight-box">
 
-**What You'll Cover:**
+**What We'll Cover:**
 - Mental model for how LLMs actually work
 - Practical patterns for AI-assisted code review & refactoring
 - See how AI tools can amplify your engineering skills
@@ -1440,7 +1440,7 @@ Explore the full implementation on [GitHub](https://github.com/smeyerhuky/CS-480
 ```
 code-review-tool/
 ├── commands/
-│   └── pr-feedback.md      # Entry point slash command
+│   └── pr-feedback.md           # Entry point slash command
 │
 └── agents/
     ├── review-coordinator.md    # Orchestrates the review process
